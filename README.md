@@ -2,22 +2,30 @@
 
 This example configuration can be used as a starting point for configuring your own Indiekit server.
 
-This example assumes that want to:
+This example assumes that you want to:
 
 * host your content on GitHub
 * publish your website using Jekyll
 * syndicate content to a Mastodon server
 
+## Requirements
+
+* [Node.js](https://nodejs.org) v24.17 or later
+
 ## Configuration variables
 
-The following strings in the [configuration file](indiekit.config.js) should be replaced with your own values (or saved as environment variables):
+Copy `.env.example` to `.env` and replace the values with your own:
 
-* `process.env.PUBLICATION_URL`
-* `process.env.GITHUB_USERNAME`
-* `process.env.GITHUB_REPOSITORY`
-* `process.env.GITHUB_BRANCH`
-* `process.env.MASTODON_SERVER`
-* `process.env.MASTODON_USERNAME`
+`cp .env.example .env`
+
+The following variables are read by the [configuration file](indiekit.config.js):
+
+* `PUBLICATION_URL`
+* `GITHUB_USER`
+* `GITHUB_REPO`
+* `GITHUB_BRANCH`
+* `MASTODON_URL`
+* `MASTODON_USER`
 
 Some values shouldn’t be made public, or included in your configuration file. Instead, they should be saved as environment variables that can only be seen by you and your server:
 
@@ -27,11 +35,28 @@ Some values shouldn’t be made public, or included in your configuration file. 
 * `PASSWORD_SECRET`
 * `SECRET`
 
+### Generating `PASSWORD_SECRET`
+
+`PASSWORD_SECRET` can only be generated once your server is running, so leave it blank to begin with:
+
+1. ensure `SECRET` is set, then start the server
+2. visit `/auth/new-password`
+3. enter the password you want to use and click ‘Generate password secret’
+4. copy the value shown, save it as `PASSWORD_SECRET`, and restart the server
+
 ## Starting your server
 
-Once you have updated the configuration file with your own values, and ensured environment variables are present, you can start the server using the following command:
+Once you have updated `.env` with your own values, install dependencies and start the server:
 
-`npm start`
+```sh
+npm install
+npm start
+```
+
+Your server will be available at `http://localhost:3000`.
+
+> [!NOTE]
+> A [MongoDB](https://www.mongodb.com) database is optional. Without one, you can still publish posts, but viewing, editing, deleting and restoring previously published posts, syndicating posts, and managing uploaded media files will be unavailable.
 
 ## Server deployment using Docker
 
@@ -45,6 +70,12 @@ If you are using Docker Compose, the `MONGO_URL` environment variable does not n
 
 * `MONGO_INITDB_ROOT_USERNAME`
 * `MONGO_INITDB_ROOT_PASSWORD`
+
+To start both the server and its database:
+
+```sh
+docker compose up --build
+```
 
 ## Server deployment using Railway
 
