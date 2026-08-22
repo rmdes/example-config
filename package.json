@@ -15,7 +15,7 @@
     "name": "Paul Robert Lloyd",
     "url": "https://paulrobertlloyd.com"
   },
-  "main": "index.config.js",
+  "main": "indiekit.config.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/getindiekit/example-config.git"
@@ -30,7 +30,8 @@
     "@indiekit/syndicator-mastodon": "^1.0.0-beta"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24.17",
+    "npm": ">=11"
   },
   "type": "module",
   "private": true

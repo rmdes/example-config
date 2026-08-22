@@ -1,7 +1,12 @@
+import { existsSync } from "node:fs";
 import process from "node:process";
-import * as dotenv from "dotenv";
 
-dotenv.config();
+// Node.js can read `.env` itself, so no dependency is needed. The file is
+// optional: in production (and in the Docker image, where `.env` is excluded
+// by `.dockerignore`) these values come from real environment variables.
+if (existsSync(".env")) {
+  process.loadEnvFile();
+}
 
 const config = {
   /**
@@ -54,7 +59,7 @@ const config = {
     checked: true,
     url: process.env.MASTODON_URL,
     user: process.env.MASTODON_USER,
-  }
+  },
 };
 
 export default config;
