@@ -1,5 +1,8 @@
 # Files to ignore
+.env
+.env.*
 *.env
+!.env.example
 
 # Folders to ignore
 node_modules
