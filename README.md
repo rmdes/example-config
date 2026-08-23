@@ -58,6 +58,16 @@ Your server will be available at `http://localhost:3000`.
 > [!NOTE]
 > A [MongoDB](https://www.mongodb.com) database is optional. Without one, you can still publish posts, but viewing, editing, deleting and restoring previously published posts, syndicating posts, and managing uploaded media files will be unavailable.
 
+## Trying the SSG starters
+
+This checkout doubles as a switchable testbed for the three Indiekit starter
+templates. `./use-starter hugo` repoints Indiekit, the generator, the web server and
+the database at `getindiekit/hugo-starter`; `eleventy`, `jekyll` and `local` do the
+same for their counterparts.
+
+See [STARTERS.md](STARTERS.md) for what to check out first, how each mode is wired,
+and how to run a starter's own test suite against this stack.
+
 ## Server deployment using Docker
 
 If you want to deploy your server using [Docker](https://www.docker.com), the following files are provided as a starting point:
