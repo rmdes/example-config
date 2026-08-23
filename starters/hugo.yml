@@ -1,0 +1,36 @@
+# getindiekit/hugo-starter  (~/indiekit/indiekit-hugo-starter)
+services:
+  indiekit:
+    # Each starter gets its OWN database. The Mongo volume is shared, so without
+    # this the admin lists posts belonging to whichever starter ran previously —
+    # their files live in another repo, so every link is broken.
+    environment:
+      - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/indiekit_hugo?authSource=admin
+    user: "${HOST_UID}:${HOST_GID}"
+    volumes:
+      - ../indiekit-hugo-starter/indiekit.config.js:/usr/src/app/indiekit.config.js:ro
+      - ../indiekit-hugo-starter/content:/usr/src/app/content
+      - ../indiekit-hugo-starter/static:/usr/src/app/static
+
+  site:
+    image: hugomods/hugo:latest
+    user: "${HOST_UID}:${HOST_GID}"
+    working_dir: /src
+    # --appendPort=false keeps generated links on :8080 as published, not Hugo's
+    # internal port. --bind is required for a container to be reachable.
+    # `hugo server` does NOT prune output for deleted content, and it serves
+    # from disk by default — so a deleted post keeps being served. Clear public/
+    # on start and render to memory, which makes deletions take effect at once.
+    command: >
+      sh -c "rm -rf /src/public &&
+             hugo server --bind 0.0.0.0 --port 8080
+             --baseURL http://localhost:8080/ --appendPort=false
+             --renderToMemory --disableFastRender"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../indiekit-hugo-starter:/src
+
+  mongo:
+    ports:
+      - "27018:27017"

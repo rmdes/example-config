@@ -1,0 +1,32 @@
+services:
+  indiekit:
+    # Each starter gets its OWN database. The Mongo volume is shared, so without
+    # this the admin lists posts belonging to whichever starter ran previously —
+    # their files live in another repo, so every link is broken.
+    environment:
+      - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/indiekit_local?authSource=admin
+    # Match the host user so files written into ./content are editable by you.
+    user: "${HOST_UID}:${HOST_GID}"
+    volumes:
+      - ./content:/usr/src/app/content
+
+  # The piece the example config never shows: something that actually BUILDS
+  # and SERVES the site Indiekit writes into ./content.
+  eleventy:
+    image: node:24-alpine
+    user: "${HOST_UID}:${HOST_GID}"
+    working_dir: /site
+    # --serve binds to localhost by default; a container needs 0.0.0.0 for the
+    # published port to reach it from the host.
+    command: sh -c "npm install --no-audit --no-fund && npx @11ty/eleventy --serve --port 8080"
+    environment:
+      - ELEVENTY_RUN_MODE=serve
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./eleventy:/site
+      - ./content:/site/content
+
+  mongo:
+    ports:
+      - "27018:27017"

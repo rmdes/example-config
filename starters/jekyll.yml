@@ -1,0 +1,34 @@
+# getindiekit/jekyll-starter  (~/indiekit/indiekit-jekyll-starter)
+services:
+  indiekit:
+    # Each starter gets its OWN database. The Mongo volume is shared, so without
+    # this the admin lists posts belonging to whichever starter ran previously —
+    # their files live in another repo, so every link is broken.
+    environment:
+      - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/indiekit_jekyll?authSource=admin
+    user: "${HOST_UID}:${HOST_GID}"
+    volumes:
+      - ../indiekit-jekyll-starter/indiekit.config.js:/usr/src/app/indiekit.config.js:ro
+      - ../indiekit-jekyll-starter:/usr/src/app/site
+
+  site:
+    image: ruby:3.3
+    user: "${HOST_UID}:${HOST_GID}"
+    working_dir: /site
+    environment:
+      - GEM_HOME=/gems
+    command: >
+      sh -c "gem install jekyll bundler --no-document >/dev/null &&
+             jekyll serve --host 0.0.0.0 --port 8080 --force_polling"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../indiekit-jekyll-starter:/site
+      - jekyll-gems:/gems
+
+  mongo:
+    ports:
+      - "27018:27017"
+
+volumes:
+  jekyll-gems:

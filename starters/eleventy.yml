@@ -1,0 +1,31 @@
+# getindiekit/eleventy-starter  (~/indiekit/indiekit-eleventy-starter)
+services:
+  indiekit:
+    # Each starter gets its OWN database. The Mongo volume is shared, so without
+    # this the admin lists posts belonging to whichever starter ran previously —
+    # their files live in another repo, so every link is broken.
+    environment:
+      - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/indiekit_eleventy?authSource=admin
+    user: "${HOST_UID}:${HOST_GID}"
+    volumes:
+      - ../indiekit-eleventy-starter/indiekit.config.js:/usr/src/app/indiekit.config.js:ro
+      - ../indiekit-eleventy-starter/content:/usr/src/app/content
+
+  site:
+    image: node:24-alpine
+    user: "${HOST_UID}:${HOST_GID}"
+    working_dir: /site
+    command: sh -c "npm install --no-audit --no-fund && npx @11ty/eleventy --serve --port 8080"
+    environment:
+      - ELEVENTY_RUN_MODE=serve
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../indiekit-eleventy-starter:/site
+      # Anonymous volume masks the host's node_modules: it is built against
+      # glibc and this image is musl, so native deps would not load.
+      - /site/node_modules
+
+  mongo:
+    ports:
+      - "27018:27017"
