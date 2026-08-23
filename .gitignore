@@ -12,3 +12,7 @@ docker-compose.override.yml
 
 # Eleventy build output for the local scaffold
 eleventy/_site
+
+# Posts written by Indiekit while testing (regenerated at will)
+/content/*
+!/content/.gitkeep

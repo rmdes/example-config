@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ title or "Note" }}</title>
+{# Step 4 of get-started: let Micropub clients discover the Indiekit server #}
+<link rel="authorization_endpoint" href="http://localhost:3000/auth">
+<link rel="token_endpoint" href="http://localhost:3000/auth/token">
+<link rel="micropub" href="http://localhost:3000/micropub">
+<style>
+body{font:16px/1.6 system-ui,sans-serif;max-width:42rem;margin:3rem auto;padding:0 1rem}
+time{color:#666;font-size:.9em}
+</style>
+</head>
+<body>
+<p><a href="/">&larr; index</a></p>
+<article class="h-entry">
+  {% if title %}<h1 class="p-name">{{ title }}</h1>{% endif %}
+  {% if date %}<time class="dt-published" datetime="{{ date }}">{{ date }}</time>{% endif %}
+  <div class="e-content">{{ content | safe }}</div>
+</article>
+</body>
+</html>
