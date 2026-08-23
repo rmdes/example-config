@@ -12,9 +12,11 @@ the web server and the database — at a different starter repository:
 ./use-starter local      # this repo's own ./eleventy scaffold
 ```
 
-Everything here is **additive**: `docker-compose.yml`, `indiekit.config.js` and the
-`Dockerfile` are untouched from upstream. The switching lives in `starters/*.yml`,
-which Compose layers over the base file as `docker-compose.override.yml`.
+`docker-compose.yml` and the `Dockerfile` are untouched from upstream. The root
+`indiekit.config.js` is repointed at the Eleventy scaffold with the file-system store,
+so `./use-starter local` runs without GitHub or Mastodon credentials. The switching
+lives in `starters/*.yml`, which Compose layers over the base file as
+`docker-compose.override.yml`.
 
 ## What you need first
 
@@ -139,9 +141,10 @@ why `use-starter` pre-creates the store directories and the Jekyll `node_modules
 point, and chowns the `jekyll-gems` volume before the containers start. Symptom when it
 goes wrong: `EACCES: permission denied, mkdir …` from `npm install` or `gem install`.
 
-**Never kill by process name.** If your Docker is rootless, container processes appear
-in the host process list and a `pkill -f eleventy` reaches inside your running
-containers. Kill by port, by a PID you captured, or with `docker compose stop`.
+**Never kill by process name.** If your Docker daemon runs as your own user rather than
+as root, container processes show up in the host process list — so `pkill -f eleventy`
+reaches inside your running containers and kills them. Kill by port, by a PID you
+captured, or with `docker compose stop`.
 
 **Do not delete a directory while it is bind-mounted.** The container's mount then
 points at a dead inode and writes hang; `docker compose exec` refuses with "current
@@ -149,7 +152,7 @@ working directory is outside of container mount namespace". Bring the stack down
 
 ## Relationship to upstream
 
-This branch is a fork-only addition for now. It is deliberately additive so it stays
-easy to rebase, and so it could be offered upstream as a self-contained feature later:
+This branch is a fork-only addition for now. It stays close to upstream so it is easy to rebase, and
+could be offered upstream later as a self-contained feature:
 the files under `starters/`, the `use-starter` script, this document, and the
 `.env.example` keys the testbed needs.
