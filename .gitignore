@@ -6,3 +6,9 @@
 
 # Folders to ignore
 node_modules
+
+# Written by ./use-starter from starters/*.yml
+docker-compose.override.yml
+
+# Eleventy build output for the local scaffold
+eleventy/_site

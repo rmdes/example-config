@@ -25,7 +25,10 @@
   },
   "dependencies": {
     "@indiekit/indiekit": "^1.0.0-beta",
+    "@indiekit/preset-eleventy": "^1.0.0-beta",
+    "@indiekit/preset-hugo": "^1.0.0-beta",
     "@indiekit/preset-jekyll": "^1.0.0-beta",
+    "@indiekit/store-file-system": "^1.0.0-beta",
     "@indiekit/store-github": "^1.0.0-beta",
     "@indiekit/syndicator-mastodon": "^1.0.0-beta"
   },
