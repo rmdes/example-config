@@ -82,3 +82,27 @@ docker compose up --build
 Click the button to use this configuration as the basis of a new service deployed with Railway:
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/gEboK6?referralCode=bCd1gL)
+
+## Smoke test
+
+A single test checks that this configuration still works: it publishes a note
+through the Micropub API, verifies the file the content store received, and
+deletes it again.
+
+The GitHub content store is pointed at a local stub (`test/github-stub.mjs`)
+through its `baseUrl` option, so the test needs no access token, makes no
+network request, and writes to no repository — while still exercising the
+plug-ins, preset, publication and syndicator options configured here.
+
+It runs on every push and weekly, so a change in a published `@indiekit/*`
+package is caught here rather than by the next person to clone this repository.
+
+The test starts and stops its own server, and refuses to run if the ports it
+needs are already in use, so it cannot publish into a server it did not start.
+All it needs is a MongoDB — deleting a post requires one — and the `.env`
+described above:
+
+```sh
+npm install
+npm run smoke
+```

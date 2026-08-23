@@ -21,7 +21,8 @@
     "url": "git+https://github.com/getindiekit/example-config.git"
   },
   "scripts": {
-    "start": "indiekit serve"
+    "start": "indiekit serve",
+    "smoke": "node test/smoke.mjs"
   },
   "dependencies": {
     "@indiekit/indiekit": "^1.0.0-beta",
@@ -34,5 +35,8 @@
     "npm": ">=11"
   },
   "type": "module",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "jsonwebtoken": "^9.0.2"
+  }
 }

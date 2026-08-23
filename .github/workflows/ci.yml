@@ -1,0 +1,54 @@
+name: smoke
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Weekly. The point of a scheduled run is that a change in a published
+    # `@indiekit/*` package fails here, rather than the first time somebody
+    # clones this repository and finds it does not work.
+    - cron: "0 7 * * 1"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [24]
+        mongodb-version: [8]
+    env:
+      PUBLICATION_URL: http://localhost:8090
+      SECRET: ci-secret-not-used-outside-this-job
+      # Placeholders. `test/indiekit.config.ci.js` points the content store at
+      # the stub in `test/github-stub.mjs`, so nothing reaches api.github.com
+      # and no repository is written to. No secrets are needed, which also
+      # means this workflow runs on pull requests from forks.
+      GITHUB_USER: example-user
+      GITHUB_REPO: example-repo
+      GITHUB_BRANCH: main
+      GITHUB_TOKEN: stub-token-not-real
+      GITHUB_API_PORT: 3001
+      MASTODON_URL: https://mastodon.example
+      MASTODON_USER: "@example"
+      MASTODON_ACCESS_TOKEN: stub-token-not-real
+      MONGO_URL: mongodb://localhost:27017/example-config
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+      # Deleting a post needs the posts collection, so a database is required.
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.12.1
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+      # `npm ci` installs exactly what the lockfile pins, so a scheduled run
+      # using it would re-test the same versions for ever. The weekly run
+      # resolves the `^1.0.0-beta` ranges instead — what a new clone actually
+      # gets — so a change in a published package shows up here.
+      - name: Install dependencies
+        run: ${{ github.event_name == 'schedule' && 'npm install --no-audit' || 'npm ci' }}
+
+      # The test starts and stops the server itself, so there is no instance
+      # for it to publish into by mistake.
+      - run: npm run smoke
