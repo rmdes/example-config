@@ -13,19 +13,26 @@ services:
       - ../indiekit-hugo-starter/static:/usr/src/app/static
 
   site:
+    # Build-to-disk watcher, NOT `hugo server --renderToMemory`. Rendering to
+    # memory makes a deleted post vanish instantly, which hides the fact that
+    # `hugo` writing to disk never prunes it — the defect the smoke test's
+    # delete assertion exists to catch, and which CI (serving public/ from
+    # disk) does see. Wipe public/ on start so a restart is always clean.
     image: hugomods/hugo:latest
     user: "${HOST_UID}:${HOST_GID}"
     working_dir: /src
-    # --appendPort=false keeps generated links on :8080 as published, not Hugo's
-    # internal port. --bind is required for a container to be reachable.
-    # `hugo server` does NOT prune output for deleted content, and it serves
-    # from disk by default — so a deleted post keeps being served. Clear public/
-    # on start and render to memory, which makes deletions take effect at once.
-    command: >
-      sh -c "rm -rf /src/public &&
-             hugo server --bind 0.0.0.0 --port 8080
-             --baseURL http://localhost:8080/ --appendPort=false
-             --renderToMemory --disableFastRender"
+    environment:
+      - HOME=/tmp
+    command: sh -c "rm -rf /src/public && hugo --watch"
+    volumes:
+      - ../indiekit-hugo-starter:/src
+
+  static:
+    # The same dumb static server `npm run serve` and CI use, serving public/
+    # from disk exactly as a real static host would.
+    image: node:24-alpine
+    working_dir: /src
+    command: sh -c "npx --yes http-server public -p 8080 -s"
     ports:
       - "8080:8080"
     volumes:

@@ -7,9 +7,17 @@ services:
     environment:
       - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/indiekit_jekyll?authSource=admin
     user: "${HOST_UID}:${HOST_GID}"
+    # Jekyll's store IS the repository root — `_articles/`, `_notes/`, `media/`
+    # and friends sit beside `_config.yml`. So mount the whole repo and run
+    # Indiekit from inside it, rather than mounting each collection separately.
+    # Node resolves modules by walking up, so /usr/src/app/node_modules is still
+    # found from here, and `indiekit.config.js` is read from the repo itself.
+    working_dir: /usr/src/app/site
     volumes:
-      - ../indiekit-jekyll-starter/indiekit.config.js:/usr/src/app/indiekit.config.js:ro
       - ../indiekit-jekyll-starter:/usr/src/app/site
+      # Mask any node_modules the host installed: this image is Alpine (musl)
+      # and the host is glibc, so host-built native modules would not load.
+      - /usr/src/app/site/node_modules
 
   site:
     image: ruby:3.3
@@ -17,18 +25,42 @@ services:
     working_dir: /site
     environment:
       - GEM_HOME=/gems
+      - PATH=/gems/bin:/usr/local/bundle/bin:/usr/local/bin:/usr/bin:/bin
+    # `jekyll build --watch`, never `jekyll serve`. WEBrick resolves
+    # extension-less paths, which would hide a collection missing its
+    # trailing-slash permalink — the exact defect this starter exists to
+    # prevent. The `static` service below serves the built output instead.
+    # --force_polling: inotify does not fire reliably across a bind mount.
     command: >
-      sh -c "gem install jekyll bundler --no-document >/dev/null &&
-             jekyll serve --host 0.0.0.0 --port 8080 --force_polling"
+      sh -c "gem list -i jekyll >/dev/null 2>&1 ||
+             gem install jekyll bundler --no-document &&
+             exec jekyll build --watch --force_polling"
+    volumes:
+      - ../indiekit-jekyll-starter:/site
+      - jekyll-gems:/gems
+
+  static:
+    # The same http-server the repo's `npm run serve` and its CI use, serving
+    # built output from disk rather than a forgiving dev server. Note this does
+    # NOT make the arrangement strict: http-server has `.html` fallback on by
+    # default and it cannot be turned off, so /notes/x answers 200 whether
+    # Jekyll wrote notes/x/index.html or a flat notes/x.html. A missing
+    # trailing-slash permalink is caught by the on-disk check in
+    # test/all-types.mjs, not by this server.
+    image: node:24-alpine
+    working_dir: /site
+    command: sh -c "npx --yes http-server _site -p 8080 -s"
     ports:
       - "8080:8080"
     volumes:
       - ../indiekit-jekyll-starter:/site
-      - jekyll-gems:/gems
 
   mongo:
     ports:
       - "27018:27017"
 
 volumes:
+  # Pinned name so `use-starter` can chown it: a fresh named volume is
+  # root-owned, and these containers run as the host user.
   jekyll-gems:
+    name: jekyll-gems

@@ -12,19 +12,31 @@ services:
       - ../indiekit-eleventy-starter/content:/usr/src/app/content
 
   site:
-    image: node:24-alpine
+    # Build-only watcher. NOT `--serve`: Eleventy's dev server does not prune a
+    # deleted post, so it keeps serving one — which is exactly what the smoke
+    # test's delete assertion exists to catch. The `static` service below serves
+    # the built output instead, as CI does.
+    # glibc image (not alpine) so the host's node_modules loads, which is why no
+    # anonymous mask is needed here — a root-owned anonymous volume is what made
+    # `npm install` fail with EACCES as the host user.
+    image: node:24-bookworm-slim
     user: "${HOST_UID}:${HOST_GID}"
     working_dir: /site
-    command: sh -c "npm install --no-audit --no-fund && npx @11ty/eleventy --serve --port 8080"
     environment:
-      - ELEVENTY_RUN_MODE=serve
+      - HOME=/tmp
+    command: sh -c "npm install --no-audit --no-fund && npx @11ty/eleventy --watch"
+    volumes:
+      - ../indiekit-eleventy-starter:/site
+
+  static:
+    # The same dumb static server `npm run serve` and CI use.
+    image: node:24-alpine
+    working_dir: /site
+    command: sh -c "npx --yes http-server _site -p 8080 -s"
     ports:
       - "8080:8080"
     volumes:
       - ../indiekit-eleventy-starter:/site
-      # Anonymous volume masks the host's node_modules: it is built against
-      # glibc and this image is musl, so native deps would not load.
-      - /site/node_modules
 
   mongo:
     ports:

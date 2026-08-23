@@ -28,7 +28,18 @@ src="starters/${name}.yml"
 case "$name" in
   eleventy) repo=../indiekit-eleventy-starter; mkdir -p "$repo/content" ;;
   hugo)     repo=../indiekit-hugo-starter;     mkdir -p "$repo/content" "$repo/static" ;;
-  jekyll)   repo=../indiekit-jekyll-starter;   mkdir -p "$repo" ;;
+  jekyll)   repo=../indiekit-jekyll-starter
+            # node_modules is masked by an anonymous volume in the fragment
+            # (host glibc vs container musl), and Docker creates the mount
+            # point as root if it is absent -- which then breaks a later
+            # `npm install` in the repo. Same trap as the store dirs above.
+            mkdir -p "$repo" "$repo/node_modules"
+            # A fresh named volume is root-owned, but the containers run as the
+            # host user, so `gem install` into it fails with EACCES. Chown it
+            # once, before compose brings the site service up.
+            docker volume create jekyll-gems >/dev/null
+            docker run --rm -u root -v jekyll-gems:/gems ruby:3.3 \
+              chown "${HOST_UID:-$(id -u)}:${HOST_GID:-$(id -g)}" /gems ;;
   local)    repo=. ;;
 esac
 [ -d "$repo" ] || { echo "Missing repo for $name: $repo" >&2; exit 1; }
