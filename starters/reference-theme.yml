@@ -1,0 +1,42 @@
+# rmdes/indiekit-theme-eleventy-reference  (~/indiekit/indiekit-theme-eleventy-reference)
+services:
+  indiekit:
+    # Its own database. The Mongo volume is shared, so without this the admin
+    # lists posts belonging to whichever site ran previously — their files live
+    # in another repo, so every link is broken.
+    environment:
+      # `INDIEKIT_DB` lets a branch that changes schema use its own database
+      # without disturbing the default one. Content files do not change with
+      # the Indiekit branch, so sharing is usually correct — override only when
+      # a branch would migrate or corrupt the shared data.
+      - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/${INDIEKIT_DB:-indiekit_reference}?authSource=admin
+    user: "${HOST_UID}:${HOST_GID}"
+    volumes:
+      - ../indiekit-theme-eleventy-reference/indiekit.config.js:/usr/src/app/indiekit.config.js:ro
+      - ../indiekit-theme-eleventy-reference/content:/usr/src/app/content
+
+  site:
+    # Build-only watcher. NOT `--serve`: Eleventy's dev server does not prune a
+    # deleted post, so it keeps serving one — which is what the smoke test's
+    # delete assertion exists to catch.
+    image: node:24-bookworm-slim
+    user: "${HOST_UID}:${HOST_GID}"
+    working_dir: /site
+    environment:
+      - HOME=/tmp
+    command: sh -c "npm install --no-audit --no-fund && npx @11ty/eleventy --watch"
+    volumes:
+      - ../indiekit-theme-eleventy-reference:/site
+
+  static:
+    image: node:24-alpine
+    working_dir: /site
+    command: sh -c "npx --yes http-server _site -p 8080 -s"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../indiekit-theme-eleventy-reference:/site
+
+  mongo:
+    ports:
+      - "27018:27017"

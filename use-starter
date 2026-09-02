@@ -40,6 +40,7 @@ case "$name" in
             docker volume create jekyll-gems >/dev/null
             docker run --rm -u root -v jekyll-gems:/gems ruby:3.3 \
               chown "${HOST_UID:-$(id -u)}:${HOST_GID:-$(id -g)}" /gems ;;
+  reference-theme) repo=../indiekit-theme-eleventy-reference; mkdir -p "$repo/content" ;;
   local)    repo=. ;;
 esac
 [ -d "$repo" ] || { echo "Missing repo for $name: $repo" >&2; exit 1; }
