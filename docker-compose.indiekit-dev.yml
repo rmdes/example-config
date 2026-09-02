@@ -1,0 +1,28 @@
+# Run Indiekit from a local checkout instead of the published image.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.indiekit-dev.yml up -d
+#
+# Compose this AFTER any starter override. `use-starter` selects the site;
+# this file selects the Indiekit. The two axes are independent.
+#
+# INDIEKIT_SRC defaults to ../indiekit-origin. For a pull request, use a
+# worktree and run `npm install` inside it first — a worktree has no
+# node_modules and Node would otherwise resolve up to the parent checkout.
+services:
+  indiekit:
+    # glibc, not alpine: the mounted node_modules holds linux-x64-gnu native
+    # binaries (sharp, lightningcss, better-sqlite3, ssh2, rollup) that cannot
+    # load under musl. Same reason the `site` service uses this base.
+    image: node:24-bookworm-slim
+    build: !reset null
+    working_dir: /src/indiekit
+    environment:
+      - INDIEKIT_SRC_ROOT=/src/indiekit
+      - HOME=/tmp
+    command: >
+      sh -c "node /guard/indiekit-src-guard.mjs &&
+             node /src/indiekit/packages/indiekit/bin/cli.js serve"
+    volumes:
+      - ${INDIEKIT_SRC:-../indiekit-origin}:/src/indiekit:ro
+      - ./bin:/guard:ro
+      - ./indiekit.config.js:/src/indiekit/indiekit.config.js:ro
