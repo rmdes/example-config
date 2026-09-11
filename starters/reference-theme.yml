@@ -1,19 +1,30 @@
-# rmdes/indiekit-theme-eleventy-reference  (~/indiekit/indiekit-theme-eleventy-reference)
+# getindiekit/indiekit-theme-eleventy  (~/indiekit/indiekit-theme-eleventy-reference)
+#
+# Unlike the SSG starters, this theme's content/ is its Eleventy source as well
+# as its post directories — index.liquid, _css, _fixtures and the templates all
+# live there. So posts are kept in this repo's ./content and mounted into the
+# theme one directory at a time, leaving the theme checkout clean.
 services:
   indiekit:
     # Its own database. The Mongo volume is shared, so without this the admin
     # lists posts belonging to whichever site ran previously — their files live
     # in another repo, so every link is broken.
     environment:
-      # `INDIEKIT_DB` lets a branch that changes schema use its own database
-      # without disturbing the default one. Content files do not change with
-      # the Indiekit branch, so sharing is usually correct — override only when
-      # a branch would migrate or corrupt the shared data.
       - MONGO_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo/${INDIEKIT_DB:-indiekit_reference}?authSource=admin
+      - PUBLICATION_URL=${SITE_URL:-http://reference.localhost:3000}
+    # Signing in makes Indiekit fetch its own PUBLICATION_URL from inside the
+    # container, where `localhost` is the container rather than this machine.
+    # Mapping the site host to the Docker host is what lets sign-in complete.
+    extra_hosts:
+      - "${SITE_HOST:-reference.localhost}:host-gateway"
     user: "${HOST_UID}:${HOST_GID}"
     volumes:
+      # The theme's config, read-only: it declares the six post types and the
+      # paths the theme's permalinks expect.
       - ../indiekit-theme-eleventy-reference/indiekit.config.js:/usr/src/app/indiekit.config.js:ro
-      - ../indiekit-theme-eleventy-reference/content:/usr/src/app/content
+      # The store. `./content` in the theme's config resolves against the
+      # image's WORKDIR, so this is where posts are written.
+      - ./content:/usr/src/app/content
 
   site:
     # Build-only watcher. NOT `--serve`: Eleventy's dev server does not prune a
@@ -24,9 +35,21 @@ services:
     working_dir: /site
     environment:
       - HOME=/tmp
+      # The samples exist for the theme's own test suite. A site fed by a real
+      # Indiekit renders only real posts.
+      - THEME_SAMPLE_POSTS=0
     command: sh -c "npm install --no-audit --no-fund && npx @11ty/eleventy --watch"
     volumes:
       - ../indiekit-theme-eleventy-reference:/site
+      # One mount per post directory, over the theme's own. Mounting the whole
+      # of content/ instead would hide the templates beside them.
+      - ./content/articles:/site/content/articles
+      - ./content/bookmarks:/site/content/bookmarks
+      - ./content/likes:/site/content/likes
+      - ./content/notes:/site/content/notes
+      - ./content/photos:/site/content/photos
+      - ./content/replies:/site/content/replies
+      - ./content/media:/site/content/media
 
   static:
     image: node:24-alpine
